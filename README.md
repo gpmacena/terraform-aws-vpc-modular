@@ -21,7 +21,7 @@ A VPC foi projetada com os seguintes componentes:
 - **Subnets Públicas**: Configuradas com **Internet Gateway (IGW)** para tráfego externo.  
 - **Subnets Privadas**: Isoladas, preparadas para camadas de banco de dados e aplicações internas.  
 - **Tabelas de Rotas**: Segregação clara entre tráfego público e privado.  
-- **Multi-AZ**: Distribuição das subnets em diferentes zonas de disponibilidade para **alta disponibilidade**.
+
 
 ---
 
