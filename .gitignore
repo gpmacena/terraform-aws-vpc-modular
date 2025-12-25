@@ -1,0 +1,25 @@
+# Arquivos de estado do Terraform (Muito importante ignorar para não expor dados sensíveis)
+*.tfstate
+*.tfstate.backup
+*.tfstate.lock.info
+
+# Pastas de trabalho do Terraform (Geradas no terraform init)
+.terraform/
+
+# Arquivos de variáveis sensíveis (Onde você pode acabar colocando senhas ou chaves)
+*.tfvars
+*.tfvars.json
+
+# Arquivos de log e crash
+*.log
+crash.log
+
+# Arquivos de plano (Se você gerar planos com dados sensíveis)
+*.tfplan
+plan.out
+
+# Arquivos do sistema e editores
+.DS_Store
+.vscode/
+.idea/
+*.swp
