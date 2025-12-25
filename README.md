@@ -1,6 +1,6 @@
-# 🌐 AWS Infrastructure with Terraform (Modular)
+# 🌐 AWS Infrastructure with Terraform & GitHub Actions (v1.4)
 
-Este repositório contém um projeto de infraestrutura escalável na AWS, utilizando **Terraform**. O foco principal é a aplicação de **boas práticas de Infraestrutura como Código (IaC)**, garantindo modularidade, segurança e automação.
+Este repositório contém um projeto de infraestrutura escalável na AWS, utilizando **Terraform** e automação via **GitHub Actions**. O foco principal desta versão é a implementação de **CI/CD (Continuous Integration / Continuous Deployment)**, garantindo que a infraestrutura seja testada e aplicada automaticamente a cada mudança no código.
 
 
 
@@ -8,40 +8,51 @@ Este repositório contém um projeto de infraestrutura escalável na AWS, utiliz
 
 ## 🚀 Tecnologias Utilizadas
 
-* **Terraform**: Orquestração e automação de infraestrutura.
-* **AWS**: Provedor de nuvem líder de mercado.
-* **S3**: Backend remoto para armazenamento do estado (`tfstate`) com segurança e suporte a State Locking.
+* **Terraform**: Orquestração e automação de infraestrutura (IaC).
+* **AWS**: Provedor de nuvem (VPC, EC2, NAT Gateway).
+* **GitHub Actions**: Pipeline de automação para ciclo de vida completo (Plan, Apply, Destroy).
+* **S3**: Backend remoto para persistência do `tfstate` com suporte a State Locking.
 
 ---
 
 ## 🏗️ Arquitetura do Projeto
 
-A infraestrutura é composta por camadas modulares e interdependentes:
+A infraestrutura é organizada em camadas modulares para máxima reusabilidade:
 
 ### 📡 Network Layer (VPC & Connectivity)
-* **Subnets Públicas**: Associadas a um **Internet Gateway (IGW)** para tráfego externo.
-* **Subnets Privadas**: Isoladas para camadas de dados, seguindo o princípio de privilégio mínimo.
-* **NAT Gateway**: Implementado em subnet pública com **Elastic IP (EIP)**, permitindo que recursos nas subnets privadas acessem a internet para atualizações sem exposição direta.
-* **Route Tables**: Tabelas distintas para gerenciar o fluxo de saída via IGW (Público) e NAT Gateway (Privado).
+* **Segregação de Subnets**: Divisão entre redes públicas e privadas para isolamento de recursos.
+* **NAT Gateway**: Implementado para permitir que recursos em redes privadas realizem atualizações de segurança sem exposição direta à internet.
+* **Tabelas de Rotas**: Roteamento inteligente para tráfego interno e externo.
 
 ### 🛡️ Security Layer (Firewall)
-* **Security Groups**: Regras de firewall *stateful* configuradas para permitir **SSH (22)** e **HTTP (80)**.
-* **Egress Control**: Saída total liberada (`0.0.0.0/0`) para permitir que as instâncias realizem patches de segurança.
+* **Security Groups**: Regras de firewall *stateful* permitindo acesso via **SSH (22)** e **HTTP (80)**.
+* **Controle de Egresso**: Saída liberada para patches de segurança e updates.
 
 ### 💻 Compute Layer (Web Server)
-* **EC2 Instance**: Servidor Ubuntu 22.04 LTS provisionado em subnet pública.
-* **Bootstrap (User Data)**: Automação via script shell para instalação e configuração automática do servidor **Nginx** no primeiro boot.
-* **Connectivity**: Validação de conectividade externa via IP público e interna via rotas NAT.
+* **EC2 Instance**: Provisionamento de servidor Ubuntu 22.04 LTS.
+* **Bootstrap (User Data)**: Automação via script shell para instalação e inicialização do servidor **Nginx**.
 
 ---
 
-## 🛠️ Diferenciais Técnicos Aplicados
+## 🤖 Pipeline CI/CD (O Diferencial da v1.4)
 
-* **Orquestração de NAT Gateway**: Configuração de conectividade segura para redes privadas, um padrão essencial para ambientes produtivos.
-* **Modularização Avançada**: Separação total entre Network, Security e EC2, facilitando a manutenção e testes isolados.
-* **Interdependência Dinâmica**: Uso de `outputs` e `inputs` para conectar módulos (VPC -> Security -> EC2) sem valores fixos (hardcoded).
-* **Backend Remoto**: Uso de S3 para persistência de estado, permitindo colaboração e segurança dos dados da infraestrutura.
-* **Tags Padronizadas**: Governança aplicada através de `default_tags` no provider para rastreio de recursos e custos.
+O grande salto desta versão é a automação total do ciclo de vida através do GitHub Actions:
+
+1.  **Validação Automática**: Todo código é verificado sintaticamente (`terraform validate`).
+2.  **Plano de Execução**: O GitHub gera um `terraform plan` em todo Pull Request, permitindo revisar custos e mudanças antes do deploy.
+3.  **Continuous Deployment**: Ao realizar o push na branch `main`, o `terraform apply` é executado automaticamente.
+4.  **Destroy sob Aprovação**: Um gatilho de destruição manual foi configurado, exigindo aprovação via *GitHub Environments* para evitar a remoção acidental da infraestrutura.
+
+
+
+---
+
+## 🛠️ Diferenciais Técnicos
+
+* **GitOps**: A infraestrutura é tratada como software, com versionamento e esteira de deploy.
+* **Segurança de Credenciais**: Uso de *GitHub Secrets* para proteger chaves de acesso da AWS.
+* **Modularização Profissional**: Divisão clara entre Rede, Segurança e Computação.
+* **Backend Remoto**: Uso de S3 para colaboração e integridade do estado da infraestrutura.
 
 ---
 
@@ -49,12 +60,11 @@ A infraestrutura é composta por camadas modulares e interdependentes:
 
 ```plaintext
 .
-├── main.tf             # Orquestrador: chama os módulos Network, Security e EC2
-├── variables.tf        # Variáveis globais da raiz
-├── terraform.tfvars    # Valores reais (excluído do Git via .gitignore)
-├── backend.tf          # Configuração do backend remoto S3
-├── provider.tf         # Configuração do provider AWS e tags padrão
+├── .github/workflows/  # Pipeline de automação (CI/CD)
+├── main.tf             # Orquestrador da infraestrutura
+├── backend.tf          # Configuração do estado remoto no S3
+├── provider.tf         # Provedor AWS e Tags padronizadas
 └── modules/
-    ├── vpc/            # Rede: VPC, Subnets, IGW, NAT Gateway, EIP e Rotas
-    ├── security/       # Segurança: Security Groups e Regras de Acesso
-    └── ec2/            # Computação: Instâncias EC2 e Cloud-Init (User Data)
+    ├── vpc/            # Rede (VPC, Subnets, IGW, NAT)
+    ├── security/       # Segurança (Security Groups)
+    └── ec2/            # Computação (Instâncias e Scripts)
