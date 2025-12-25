@@ -18,31 +18,30 @@ Este repositório contém um projeto de infraestrutura escalável na AWS, utiliz
 
 A infraestrutura é composta por camadas modulares e interdependentes:
 
-### 📡 Network Layer (VPC)
-* **Subnets Públicas**: Associadas a um Internet Gateway (IGW) para hospedar serviços externos (ex: Load Balancers, Web Servers).
-* **Subnets Privadas**: Isoladas para camadas de dados e aplicações internas, seguindo o princípio de privilégio mínimo.
-* **Route Tables**: Segregação de tráfego garantindo que as subnets privadas não tenham exposição direta à internet.
+### 📡 Network Layer (VPC & Connectivity)
+* **Subnets Públicas**: Associadas a um **Internet Gateway (IGW)** para tráfego externo.
+* **Subnets Privadas**: Isoladas para camadas de dados, seguindo o princípio de privilégio mínimo.
+* **NAT Gateway**: Implementado em subnet pública com **Elastic IP (EIP)**, permitindo que recursos nas subnets privadas acessem a internet para atualizações sem exposição direta.
+* **Route Tables**: Tabelas distintas para gerenciar o fluxo de saída via IGW (Público) e NAT Gateway (Privado).
 
 ### 🛡️ Security Layer (Firewall)
-* **Security Groups**: Regras de firewall *stateful* configuradas especificamente para permitir tráfego **SSH (22)** e **HTTP (80)**.
-* **Egress Control**: Saída total liberada para permitir que os recursos internos realizem atualizações de segurança e patches.
+* **Security Groups**: Regras de firewall *stateful* configuradas para permitir **SSH (22)** e **HTTP (80)**.
+* **Egress Control**: Saída total liberada (`0.0.0.0/0`) para permitir que as instâncias realizem patches de segurança.
 
 ### 💻 Compute Layer (Web Server)
-* **EC2 Instance**: Provisionamento de servidor Ubuntu 22.04 LTS.
+* **EC2 Instance**: Servidor Ubuntu 22.04 LTS provisionado em subnet pública.
 * **Bootstrap (User Data)**: Automação via script shell para instalação e configuração automática do servidor **Nginx** no primeiro boot.
-* **Connectivity**: Instância lançada em subnet pública com associação de IP público para acesso via navegador.
-
-
+* **Connectivity**: Validação de conectividade externa via IP público e interna via rotas NAT.
 
 ---
 
 ## 🛠️ Diferenciais Técnicos Aplicados
 
-* **Modularização Avançada**: Divisão entre rede, segurança e computação, permitindo que cada módulo evolua de forma independente.
-* **Interdependência de Módulos**: O módulo de segurança consome o `vpc_id` da rede, e o módulo EC2 consome o `security_group_id` e `subnet_id` via outputs.
-* **Uso de `for_each`**: Implementado para a criação dinâmica de subnets e associações, garantindo código limpo.
-* **Backend Remoto Profissional**: Configuração no S3, prática indispensável para ambientes corporativos e trabalho em equipe.
-* **Tags Padronizadas**: Governança aplicada através de `default_tags` no provider para rastreio de recursos.
+* **Orquestração de NAT Gateway**: Configuração de conectividade segura para redes privadas, um padrão essencial para ambientes produtivos.
+* **Modularização Avançada**: Separação total entre Network, Security e EC2, facilitando a manutenção e testes isolados.
+* **Interdependência Dinâmica**: Uso de `outputs` e `inputs` para conectar módulos (VPC -> Security -> EC2) sem valores fixos (hardcoded).
+* **Backend Remoto**: Uso de S3 para persistência de estado, permitindo colaboração e segurança dos dados da infraestrutura.
+* **Tags Padronizadas**: Governança aplicada através de `default_tags` no provider para rastreio de recursos e custos.
 
 ---
 
@@ -56,6 +55,6 @@ A infraestrutura é composta por camadas modulares e interdependentes:
 ├── backend.tf          # Configuração do backend remoto S3
 ├── provider.tf         # Configuração do provider AWS e tags padrão
 └── modules/
-    ├── vpc/            # Módulo de Rede (VPC, Subnets, IGW, RT)
-    ├── security/       # Módulo de Segurança (Security Groups)
-    └── ec2/            # Módulo de Computação (Instâncias EC2)
+    ├── vpc/            # Rede: VPC, Subnets, IGW, NAT Gateway, EIP e Rotas
+    ├── security/       # Segurança: Security Groups e Regras de Acesso
+    └── ec2/            # Computação: Instâncias EC2 e Cloud-Init (User Data)

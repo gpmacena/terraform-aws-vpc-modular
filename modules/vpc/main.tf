@@ -77,3 +77,23 @@ resource "aws_route_table_association" "private" {
   subnet_id      = each.value.id
   route_table_id = aws_route_table.private.id
 }
+
+resource "aws_eip" "nat" {
+  domain = "vpc"
+  tags = { Name = "nat-eip-projeto1" }
+}
+
+resource "aws_nat_gateway" "main" {
+  allocation_id = aws_eip.nat.id
+  subnet_id     = aws_subnet.public[keys(aws_subnet.public)[0]].id
+
+  tags = { Name = "nat-gateway-projeto1" }
+
+  depends_on = [aws_internet_gateway.projeto1]
+}
+
+resource "aws_route" "private_nat" {
+  route_table_id         = aws_route_table.private.id
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = aws_nat_gateway.main.id
+}
